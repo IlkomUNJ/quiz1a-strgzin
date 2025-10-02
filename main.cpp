@@ -1,13 +1,21 @@
 #include <iostream>
+#include <vector>
+#include <string>
 #include "bank_customer.h"
 #include "buyer.h"
+#include "seller.h"
 
-enum PrimaryPrompt{LOGIN, REGISTER, EXIT, ADMIN_LOGIN};
-enum RegisterPrompt{CREATE_BUYER, CREATE_SELLER, BACK};
 using namespace std;
 
+enum PrimaryPrompt { LOGIN, REGISTER, EXIT, ADMIN_LOGIN };
+enum RegisterPrompt { CREATE_BUYER, CREATE_SELLER, BACK };
+
+// global storage (sementara, simulasi database)
+vector<Buyer*> buyers;
+vector<seller*> sellers;
+vector<BankCustomer*> bankAccounts;
+
 int main() {
-    //create a loop prompt 
     PrimaryPrompt prompt = LOGIN;
     RegisterPrompt regPrompt = CREATE_BUYER;
     const string ADMIN_USERNAME = "root";
@@ -20,129 +28,225 @@ int main() {
         cout << "2. Register" << endl;
         cout << "3. Exit" << endl;
         cout << "4. Admin Login" << endl;
+
         int choice;
         cin >> choice;
         prompt = static_cast<PrimaryPrompt>(choice - 1);
-        switch (prompt) {
-            case LOGIN:
-                cout << "Login selected." << endl;
-                /* if Login is selected, based on authority then provide options:
-                assume user is logged in as Buyer for now
-                1. Chek Account Status (will display if user is Buyer or Seller or both and linked banking account status)
-                Will display Buyer, Seller and Banking Account details
-                2. Upgrade Account to Seller
-                Will prompt user to enter Seller details and create a Seller account linked to Buyer account
-                Will reject if a user dont have a banking account linked
-                3. Create Banking Account (if not already linked), will be replaced with banking functions
-                Must provides: initial deposit amount, Address, Phone number, Email
-                Banking functions will provides: Balance checking, Transaction History, Deposit, Withdraw
-                4. Browse Store Functionality
-                Will display all stores initially
-                Need to select a store to browse each store inventory
-                Will display all items in the store inventory
-                After selecting an item, will display item details and option to add to cart
-                After adding to cart, will notify user item is added to cart
-                5. Order Functionality
-                Will display all items in cart
-                Will provide option to remove item from cart
-                Will provide option to checkout
-                After checkout invoide will be generated (will go to payment functionality)
-                6. Payment Functionality
-                Will display all listed invoices
-                Pick an invoice to pay
-                Will display invoice details and total amount
-                Will provide option to pay invoice
-                Payment is done through confirmation dialogue
-                In confirmation dialogue, will display account balance as precursor
-                User will need to manually enter invoice id to pay
-                After paying balance will be redacted from buyer and added to the responding seller account
-                After payment, order status will be changed to paid
-                7. Logout (return to main menu)
-                Display confirmation dialogue
-                If confirmed, return to main menu
-                If not, return to Buyer menu
-                8. Delete Account (remove both Buyer and Seller account and relevant banking account)
-                Display confirmation dialogue
-                If confirmed, delete account and return to main menu
-                If not, return to Buyer menu
 
-                assume user is logged in as Seller for now
-                9. Check Inventory
-                10. Add Item to Inventory
-                11. Remove Item from Inventory
-                12. View Orders (will display all orders placed to this seller
-                Only orders with paid status will be listed
-                Order details will listing items, quantity, total amount, buyer details, order status (paid, cancelled, completed)
-                extra functions
-                9. Exit to main Menu
-                10. Exit Program
-                **/
-                break;
-            case REGISTER:
-                regPrompt = CREATE_BUYER; // reset regPrompt to CREATE_BUYER when entering register menu
-                while (regPrompt != BACK){
-                    cout << "Register selected. " << endl;
-                    cout << "Select an option: " << endl;
-                    cout << "1. Create Buyer Account" << endl;
-                    cout << "2. Create Seller Account" << endl;
-                    cout << "3. Back" << endl;
-                    int regChoice;
-                    cin >> regChoice;
-                    regPrompt = static_cast<RegisterPrompt>(regChoice - 1);
-                    switch (regPrompt) {
-                        case CREATE_BUYER:
-                            cout << "Create Buyer Account selected." << endl;
+        switch (prompt) {
+        case LOGIN:
+            cout << "Login selected." << endl;
+            // Belum diimplementasi detail login
+            break;
+
+        case REGISTER:
+            regPrompt = CREATE_BUYER; // reset saat masuk menu register
+            while (regPrompt != BACK) {
+                cout << "Register selected. " << endl;
+                cout << "Select an option: " << endl;
+                cout << "1. Create Buyer Account" << endl;
+                cout << "2. Create Seller Account" << endl;
+                cout << "3. Back" << endl;
+
+                int regChoice;
+                cin >> regChoice;
+                regPrompt = static_cast<RegisterPrompt>(regChoice - 1);
+
+                switch (regPrompt) {
+                case CREATE_BUYER: {
+                    cout << "Enter Buyer ID: ";
+                    int id;
+                    cin >> id;
+                    cout << "Enter Buyer Name: ";
+                    string name;
+                    cin.ignore();
+                    getline(cin, name);
+
+                    BankCustomer* acc = new BankCustomer(id, name, 1000.0); // contoh
+                    bankAccounts.push_back(acc);
+
+                    Buyer* newBuyer = new Buyer(id, name, *acc);
+                    buyers.push_back(newBuyer);
+
+                    cout << "Buyer created: " << newBuyer->getName() << endl;
+                    break;
+                }
+                case CREATE_SELLER: {
+                    if (buyers.empty()) {
+                        cout << "No buyers available to link seller account." << endl;
+                        break;
+                    }
+                    cout << "Link to Buyer ID: ";
+                    int bid;
+                    cin >> bid;
+
+                    Buyer* b = nullptr;
+                    for (auto buyer : buyers) {
+                        if (buyer->getId() == bid) {
+                            b = buyer;
                             break;
-                        case CREATE_SELLER:
-                            cout << "Create Seller Account selected." << endl;
-                            break;
-                        case BACK:
-                            cout << "Back selected." << endl;
-                            break;
-                        default:
-                            cout << "Invalid option." << endl;
-                            break;
+                        }
+                    }
+                    if (b == nullptr) {
+                        cout << "Buyer not found." << endl;
+                        break;
+                    }
+
+                    cout << "Enter Seller ID: ";
+                    int sid;
+                    cin >> sid;
+                    cout << "Enter Store Name: ";
+                    string sname;
+                    cin.ignore();
+                    getline(cin, sname);
+
+                    seller* newSeller = new seller(*b, sid, sname);
+                    sellers.push_back(newSeller);
+
+                    cout << "Seller created: " << sname << endl;
+                    break;
+                }
+                case BACK:
+                    cout << "Back selected." << endl;
+                    break;
+                default:
+                    cout << "Invalid option." << endl;
+                    break;
+                }
+            }
+            break;
+
+        case ADMIN_LOGIN:
+            cout << "Username: ";
+            cin >> username;
+            cout << "Password: ";
+            cin >> password;
+
+            if (username == ADMIN_USERNAME && password == ADMIN_PASSWORD) {
+                cout << "Admin logged in successfully." << endl;
+
+                bool adminRunning = true;
+                while (adminRunning) {
+                    cout << "\n--- Admin Menu ---" << endl;
+                    cout << "1. View All Buyers" << endl;
+                    cout << "2. View All Sellers" << endl;
+                    cout << "3. View Details of Buyers" << endl;
+                    cout << "4. View Details of Sellers" << endl;
+                    cout << "5. Find Buyer/Seller by ID" << endl;
+                    cout << "6. Remove Buyer by ID" << endl;
+                    cout << "7. Remove Seller by ID" << endl;
+                    cout << "8. Back to Main Menu" << endl;
+
+                    int adminChoice;
+                    cin >> adminChoice;
+
+                    switch (adminChoice) {
+                    case 1:
+                        cout << "--- Buyers ---" << endl;
+                        for (auto b : buyers) {
+                            cout << "ID: " << b->getId() << ", Name: " << b->getName() << endl;
+                        }
+                        break;
+                    case 2:
+                        cout << "--- Sellers ---" << endl;
+                        for (auto s : sellers) {
+                            cout << "ID: " << s->getId() << ", Store: " << s->getName() << endl;
+                        }
+                        break;
+                    case 3:
+                        cout << "--- Buyer Details ---" << endl;
+                        for (auto b : buyers) {
+                            cout << "ID: " << b->getId()
+                                 << ", Name: " << b->getName()
+                                 << ", Balance: " << b->getAccount().getBalance() << endl;
+                        }
+                        break;
+                    case 4:
+                        cout << "--- Seller Details ---" << endl;
+                        for (auto s : sellers) {
+                            cout << "SellerID: " << s->getId()
+                                 << ", Store: " << s->getName()
+                                 << ", Buyer Linked: " << s->Buyer::getName() << endl;
+                        }
+                        break;
+                    case 5: {
+                        cout << "Enter ID: ";
+                        int searchId;
+                        cin >> searchId;
+
+                        bool found = false;
+                        for (auto b : buyers) {
+                            if (b->getId() == searchId) {
+                                cout << "Buyer Found: " << b->getName() << endl;
+                                found = true;
+                            }
+                        }
+                        for (auto s : sellers) {
+                            if (s->getId() == searchId) {
+                                cout << "Seller Found: " << s->getName() << endl;
+                                found = true;
+                            }
+                        }
+                        if (!found) cout << "Not Found." << endl;
+                        break;
+                    }
+                    case 6: {
+                        cout << "Enter Buyer ID to remove: ";
+                        int remId;
+                        cin >> remId;
+                        for (auto it = buyers.begin(); it != buyers.end(); ++it) {
+                            if ((*it)->getId() == remId) {
+                                delete *it;
+                                buyers.erase(it);
+                                cout << "Buyer removed." << endl;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    case 7: {
+                        cout << "Enter Seller ID to remove: ";
+                        int remId;
+                        cin >> remId;
+                        for (auto it = sellers.begin(); it != sellers.end(); ++it) {
+                            if ((*it)->getId() == remId) {
+                                delete *it;
+                                sellers.erase(it);
+                                cout << "Seller removed." << endl;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    case 8:
+                        adminRunning = false;
+                        break;
+                    default:
+                        cout << "Invalid option." << endl;
+                        break;
                     }
                 }
-                /* if register is selected then went throuhh registration process:
-                1. Create a new Buyer Account
-                Must provides: Name, Home Address, Phone number, Email
-                2. Option to create a Seller Account (will be linked to Buyer account)
-                Must Provides 1: Home Address, Phone number, Email
-                Must provides 2: Store Name, Store Address, Store Phone number, Store Email
-                Must provides 3: initial deposit amount
-                After finished immediately logged in as Buyer/Seller
-                */
-                break;
-            case EXIT:
-                cout << "Exiting." << endl;
-                break;
-            case ADMIN_LOGIN:
-                /* Prompt for username & password then check the entries with our hard coded features */
-                cout << "Username: ";
-                cin >> username;
-                cout << "Password: ";
-                cin >> password;
-                /** After login create a sub prompt that provides the following features
-                1. Account Management
-                    - View All Buyers, Sellers
-                    - View All details of Buyers, Sellers
-                    - Seek certain buyer of seller based on Name / account Id / address / phone number
-                    - Create new buyer/seller/Bank account
-                    - Remove buyer/seller based on ID (all related info will be deleted)
-                2. System Report
-                    - Total number of Buyers, Sellers
-                    - Total number of Banking Accounts
-                */
-                break;
-            default:
-                cout << "Invalid option." << endl;
-                break;
+            } else {
+                cout << "Admin login failed." << endl;
+            }
+            break;
+
+        case EXIT:
+            cout << "Exiting." << endl;
+            break;
+
+        default:
+            cout << "Invalid option." << endl;
+            break;
         }
+
         cout << endl;
     }
 
-    //BankCustomer customer1(1, "Alice", 1000.0);
-    //Buyer buyer1(1, customer1.getName(), customer1);
-    return 1;
+    // cleanup (hindari memory leak)
+    for (auto b : buyers) delete b;
+    for (auto s : sellers) delete s;
+    for (auto acc : bankAccounts) delete acc;
+
+    return 0;
 }
